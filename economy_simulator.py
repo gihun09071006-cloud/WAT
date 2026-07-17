@@ -108,6 +108,9 @@ def simulate(inputs: Inputs) -> pd.DataFrame:
 
         # §10: 유저 실질 가치에는 WAT 가격이 없다 — reward_pool_usd / dau 만으로 결정된다.
         # sink_rate와도 무관: 전원이 균등 소각하면 상환 지분이 보존돼 유저 달러는 불변.
+        # ⚠️ 보장액이 아니다 (CLAUDE.md §10 "보장 아님"): 이것은 보상풀을 인원으로 나눈
+        # 기대 평균(expected pool share)이며, 개인의 실제 결과는 플레이량·상환 시점 환율(P÷S)·
+        # 광고 매출을 유동성에 어떻게 공급하느냐에 따라 변동한다. "월 $X 보장"으로 읽으면 안 됨.
         user_monthly_usd = (reward_pool_usd / 365 / dau) * 30 if dau else 0.0
         # §10 재확인: 상환 Spark 1개의 달러값 = 풀$ ÷ 상환 총량.
         redeemer_usd_per_spark = (
@@ -266,12 +269,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             df.to_csv(args.csv)
             print(f"\n저장됨: {args.csv}")
 
-    print("\n--- 손익분기 (§10: 유저 실질 월 가치는 WAT 가격과 무관) ---")
+    print("\n--- 손익분기 (기대 평균 기준 · 보장 아님 · §10) ---")
+    print("    ※ user_monthly_usd = 보상풀 ÷ 인원 = 기대 평균. 개인 보장액 아님.")
     for scenario_name, fill_rate in FILL_RATE_SCENARIOS.items():
         cpq_be = breakeven_cpq(inputs.quests_per_day, fill_rate["Y3"], inputs.reward_share)
         print(
             f"{scenario_name:12s} (Y3 fill={fill_rate['Y3']:.0%}): "
-            f"user_monthly_usd > $1 되는 최소 CPQ = ${cpq_be:.4f}"
+            f"기대 평균 월 가치 > $1 되는 최소 CPQ = ${cpq_be:.4f}"
         )
 
 
