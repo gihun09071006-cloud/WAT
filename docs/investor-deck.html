@@ -1,0 +1,693 @@
+<title>QuestFi — Investor Briefing</title>
+<style>
+  :root {
+    /* light (default) — cool paper, blue-biased neutrals */
+    --bg: #EEF0F5;
+    --bg-2: #E4E7EF;
+    --panel: #FBFCFE;
+    --panel-2: #F3F5FA;
+    --ink: #12151C;
+    --ink-soft: #545B6C;
+    --ink-faint: #838B9C;
+    --line: #D8DCE7;
+    --line-strong: #C3C9D8;
+    --accent: #9A6B12;      /* WAT gold, darkened for light ground */
+    --accent-bright: #B8862E;
+    --signal: #0E7C6F;      /* solvent / go */
+    --warn: #B84A32;        /* honest risk */
+    --shadow: 0 1px 2px rgba(18,21,28,.06), 0 8px 30px rgba(18,21,28,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #090C12;
+      --bg-2: #0B0F17;
+      --panel: #12161F;
+      --panel-2: #161B26;
+      --ink: #EAECF2;
+      --ink-soft: #9AA2B4;
+      --ink-faint: #6B7488;
+      --line: #232A38;
+      --line-strong: #2E3749;
+      --accent: #E8B44A;
+      --accent-bright: #F2C563;
+      --signal: #3FD3C6;
+      --warn: #E5735B;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #EEF0F5; --bg-2: #E4E7EF; --panel: #FBFCFE; --panel-2: #F3F5FA;
+    --ink: #12151C; --ink-soft: #545B6C; --ink-faint: #838B9C;
+    --line: #D8DCE7; --line-strong: #C3C9D8;
+    --accent: #9A6B12; --accent-bright: #B8862E; --signal: #0E7C6F; --warn: #B84A32;
+    --shadow: 0 1px 2px rgba(18,21,28,.06), 0 8px 30px rgba(18,21,28,.06);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #090C12; --bg-2: #0B0F17; --panel: #12161F; --panel-2: #161B26;
+    --ink: #EAECF2; --ink-soft: #9AA2B4; --ink-faint: #6B7488;
+    --line: #232A38; --line-strong: #2E3749;
+    --accent: #E8B44A; --accent-bright: #F2C563; --signal: #3FD3C6; --warn: #E5735B;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .mono, .eyebrow, .stat-num, th, td.num, .ticker, .tag, .formula, code {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- instrument bar ---------- */
+  .bar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 1rem;
+    padding: .55rem clamp(1rem, 4vw, 2.4rem);
+    background: color-mix(in oklab, var(--bg) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: .55rem; font-weight: 800; letter-spacing: -.01em; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent); }
+  .ticker {
+    flex: 1; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    font-size: .74rem; color: var(--ink-soft); letter-spacing: .04em;
+  }
+  .ticker span { color: var(--accent); }
+  .ticker b { color: var(--signal); font-weight: 600; }
+  @media (max-width: 720px) { .ticker { display: none; } }
+  .toggle {
+    font: inherit; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+    font-family: ui-monospace, monospace;
+    padding: .4rem .7rem; border-radius: 7px; cursor: pointer;
+    color: var(--ink-soft); background: var(--panel-2); border: 1px solid var(--line);
+  }
+  .toggle:hover { color: var(--ink); border-color: var(--line-strong); }
+  .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(1.1rem, 4vw, 2.4rem); }
+  section { padding: clamp(3.4rem, 8vw, 6rem) 0; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: 0; }
+
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1.1rem;
+    display: inline-flex; align-items: center; gap: .6rem;
+  }
+  .eyebrow::before { content: ""; width: 26px; height: 1px; background: var(--accent); opacity: .7; }
+
+  h1, h2, h3 { letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.7rem); font-weight: 800; line-height: 1.1; }
+  h3 { font-size: 1.18rem; font-weight: 750; }
+  .lede { font-size: clamp(1.05rem, 1.8vw, 1.28rem); color: var(--ink-soft); max-width: 60ch; margin: 1.2rem 0 0; }
+  p { max-width: 66ch; }
+  .muted { color: var(--ink-soft); }
+  .faint { color: var(--ink-faint); }
+
+  /* ---------- hero ---------- */
+  .hero { position: relative; overflow: hidden; border-top: 0; padding-top: clamp(3.5rem, 9vw, 7rem); }
+  #stars { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .hero .wrap { position: relative; z-index: 1; }
+  .hero h1 {
+    font-size: clamp(2.5rem, 7vw, 5.3rem); font-weight: 850; line-height: 1.02;
+    margin: .3rem 0 0;
+  }
+  .hero h1 .gold { color: var(--accent); }
+  .hero .sub { font-size: clamp(1.05rem, 2vw, 1.4rem); color: var(--ink-soft); max-width: 46ch; margin: 1.5rem 0 0; }
+  .attn {
+    font-family: ui-monospace, monospace; font-size: .8rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--signal); margin-top: 2rem; display: inline-block;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2.4rem; }
+  .chip {
+    display: flex; flex-direction: column; gap: .15rem;
+    padding: .85rem 1.1rem; border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+    box-shadow: var(--shadow); min-width: 132px;
+  }
+  .chip .stat-num { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+  .chip .stat-num.ok { color: var(--signal); }
+  .chip .stat-num.gold { color: var(--accent); }
+  .chip small { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+    font-family: ui-monospace, monospace; }
+
+  /* ---------- panels / grids ---------- */
+  .grid { display: grid; gap: 1rem; margin-top: 2.2rem; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 860px) { .g3, .g4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 1.5rem 1.6rem; box-shadow: var(--shadow);
+  }
+  .card h3 { margin-bottom: .5rem; }
+  .card p { font-size: .96rem; color: var(--ink-soft); margin: 0; }
+  .card .kick { font-family: ui-monospace, monospace; font-size: .7rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); display: block; margin-bottom: .8rem; }
+
+  .impossible .card h3 { color: var(--signal); display: flex; align-items: baseline; gap: .5rem; }
+  .impossible .card h3::before { content: "✓"; color: var(--signal); font-weight: 700; }
+
+  /* ---------- flow (death spiral / product loop) ---------- */
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin-top: 2rem; }
+  .flow .node {
+    flex: 1 1 auto; min-width: 130px; padding: .9rem 1rem; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--line); font-size: .9rem; line-height: 1.4;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  .flow .arrow { align-self: center; color: var(--ink-faint); font-family: ui-monospace, monospace; }
+  .flow.doom .node { border-color: color-mix(in oklab, var(--warn) 35%, var(--line)); }
+  .flow.doom .arrow { color: var(--warn); }
+
+  .loop { counter-reset: step; }
+  .loop .node { position: relative; flex-direction: column; gap: .35rem; padding-top: 1.5rem; }
+  .loop .node::before {
+    counter-increment: step; content: counter(step, decimal-leading-zero);
+    font-family: ui-monospace, monospace; font-size: .68rem; color: var(--accent); letter-spacing: .1em;
+    position: absolute; top: .5rem; left: .7rem;
+  }
+  .loop .node b { font-size: .95rem; }
+  .loop .node small { color: var(--ink-faint); font-size: .76rem; }
+
+  /* ---------- formula readout ---------- */
+  .readout {
+    background: var(--bg-2); border: 1px solid var(--line-strong); border-radius: 14px;
+    padding: 1.6rem 1.8rem; margin-top: 2rem; position: relative; overflow-x: auto;
+  }
+  .readout .formula { font-size: 1.05rem; line-height: 2; color: var(--ink); white-space: nowrap; }
+  .readout .formula .op { color: var(--ink-faint); }
+  .readout .formula .hl { color: var(--accent); font-weight: 600; }
+  .readout .formula .res { color: var(--signal); font-weight: 600; }
+  .readout .note { font-size: .82rem; color: var(--ink-faint); margin: .8rem 0 0; font-family: ui-monospace, monospace; }
+
+  .callout {
+    margin-top: 1.6rem; padding: 1.3rem 1.5rem; border-radius: 12px;
+    background: color-mix(in oklab, var(--accent) 9%, var(--panel));
+    border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--line));
+    border-left: 3px solid var(--accent);
+  }
+  .callout p { margin: 0; font-size: .98rem; color: var(--ink); }
+  .callout.warn { background: color-mix(in oklab, var(--warn) 9%, var(--panel));
+    border-color: color-mix(in oklab, var(--warn) 30%, var(--line)); border-left-color: var(--warn); }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x: auto; margin-top: 2rem; border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: .92rem; }
+  th, td { padding: .8rem 1.1rem; text-align: left; border-bottom: 1px solid var(--line); }
+  thead th { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+    font-weight: 600; background: var(--panel-2); }
+  td.num, th.num { text-align: right; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: color-mix(in oklab, var(--accent) 5%, transparent); }
+  .flat { color: var(--signal); font-weight: 600; }
+  .down { color: var(--accent); }
+
+  /* ---------- charts ---------- */
+  .chartcard { margin-top: 2rem; }
+  .chartwrap { position: relative; width: 100%; }
+  canvas.chart { display: block; width: 100%; height: auto; }
+  .legend { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-top: 1rem; font-size: .8rem;
+    font-family: ui-monospace, monospace; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 20px; height: 3px; border-radius: 2px; margin-right: .5rem; vertical-align: middle; }
+
+  /* ---------- ask ---------- */
+  .tbd { border-style: dashed; }
+  .tbd .tag { color: var(--ink-faint); }
+  .tag { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+
+  footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); color: var(--ink-faint); font-size: .82rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* reveal */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+</style>
+
+<div class="bar">
+  <div class="brand"><span class="dot"></span> QuestFi</div>
+  <div class="ticker mono" aria-hidden="true">
+    Y3 배출 <span>0</span> · 신규 발행 <span>6%</span> of supply · 손익분기 CPQ <b>$0.0082</b> ·
+    현 가정 CPQ $0.03 = <b>3.6× 마진</b> · 유동성 슬리피지 12개월 10.8% → <b>1.2%</b> · 이코노미 테스트 <b>27 PASS</b>
+  </div>
+  <button class="toggle" id="tg" type="button" aria-label="테마 전환">Theme</button>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <p class="eyebrow">Investor Briefing · 내부 목표, 약속 아님</p>
+    <h1>광고를 <span class="gold">게임</span>으로<br>만드는 플랫폼.</h1>
+    <p class="sub">광고비를 게임 경제의 연료로 바꾼다. 광고주는 검증된 <b>퀘스트 완료(CPQ)</b>를 사고,
+      유저는 플레이로 가치를 소유한다.</p>
+    <span class="attn">// Attention becomes Value</span>
+    <div class="chips">
+      <div class="chip"><span class="stat-num ok">Y3 = 0</span><small>신규 배출 · 매출 자립</small></div>
+      <div class="chip"><span class="stat-num">6%</span><small>3년 누적 희석 상한</small></div>
+      <div class="chip"><span class="stat-num gold">$0.0082</span><small>손익분기 CPQ</small></div>
+      <div class="chip"><span class="stat-num ok">27 / 27</span><small>이코노미 테스트 통과</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">01 · 문제</p>
+    <h2>X-to-Earn은 왜 전부 죽었나</h2>
+    <p class="lede">보상을 좇아온 유저의 어텐션은 광고주에게 가치가 없다. 대부분의 P2E·X-to-Earn은
+      같은 죽음의 나선으로 무너졌다.</p>
+    <div class="flow doom">
+      <div class="node">보상 목적 유저</div><span class="arrow">→</span>
+      <div class="node">저품질 어텐션</div><span class="arrow">→</span>
+      <div class="node">광고주 ROI 붕괴</div><span class="arrow">→</span>
+      <div class="node">광고비 이탈</div><span class="arrow">→</span>
+      <div class="node">토큰 하락</div><span class="arrow">→</span>
+      <div class="node">유저 이탈</div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><span class="kick">뿌리 원인 1</span><h3>과금 단위가 틀렸다</h3>
+        <p>CPM·CPC는 "봤는지"만 잰다. 광고주는 전환을 원하는데 노출을 산다.</p></div>
+      <div class="card"><span class="kick">뿌리 원인 2</span><h3>보상 재원이 틀렸다</h3>
+        <p>토큰을 새로 찍어(emission) 보상했다. 신규 유입이 멈추는 순간 무너지는 폰지 구조.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- INSIGHT -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">02 · 통찰</p>
+    <h2>두 개의 전환</h2>
+    <div class="grid g2">
+      <div class="card">
+        <span class="kick">전환 ①  과금 단위</span>
+        <h3>CPM / CPC → <span style="color:var(--accent)">CPQ</span></h3>
+        <p>"본 사람 수"가 아니라 <b>"끝까지 수행한 사람 수"</b>에 과금한다. ROI 측정이 대시보드 부가기능이
+          아니라 비즈니스 모델 그 자체 — Google 대비 유일한 구조적 차별점.</p>
+      </div>
+      <div class="card">
+        <span class="kick">전환 ②  보상 재원</span>
+        <h3>Emission → <span style="color:var(--signal)">매출 바이백</span></h3>
+        <p>보상은 찍어서가 아니라 <b>매출로 산 물량</b>으로 준다. 신규 발행은 초기 부트스트랩(공급 6%)뿐,
+          Y3에 0. 매출만으로 자립한다.</p>
+      </div>
+    </div>
+    <div class="readout">
+      <div class="formula mono">
+        광고주 법정화폐 100% <span class="op">→</span> 운영사 수령
+        &nbsp;<span class="op">┃</span>&nbsp;
+        <span class="hl">① 운영 40%</span> <span class="op">·</span>
+        <span class="res">② 보상 40%</span> (WAT 바이백·유동성) <span class="op">·</span>
+        <span class="hl">③ 생태계 20%</span>
+      </div>
+      <p class="note">// 광고주는 카드·인보이스로 결제. 토큰을 만지지 않는다 — 온보딩의 강점.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">03 · 제품</p>
+    <h2>비행기 슈팅 + Parts Scan</h2>
+    <p class="lede">남녀노소 누구나, 3클릭 이내, 모바일 우선. 광고는 "부품 스캔"이라는 게임 재료로 재해석된다 —
+      유저 화면에 "광고"라는 단어는 없다.</p>
+    <div class="flow loop">
+      <div class="node"><b>시작 10초</b><small>업그레이드 개방</small></div><span class="arrow">→</span>
+      <div class="node"><b>부품 스캔</b><small>10회 → 업그레이드</small></div><span class="arrow">→</span>
+      <div class="node"><b>보스 클리어</b><small>Spark 보상</small></div><span class="arrow">→</span>
+      <div class="node"><b>10 스테이지</b><small>월드 완주</small></div><span class="arrow">→</span>
+      <div class="node"><b>다음 행성</b><small>무한 tail</small></div>
+    </div>
+    <div class="callout">
+      <p><b>생존 조건 — 모든 기능의 리트머스:</b> "WAT 가격이 0이어도 내일 또 접속할 게임인가?"
+        재미가 먼저인 것은 UX 취향이 아니라 경제 생존 조건이다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ENGINE -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">04 · 경제 엔진</p>
+    <h2>Redemption Epoch</h2>
+    <p class="lede">보상은 정기(월간) 정산으로 지급된다. 환율은 <b>발표가 아니라 결과</b>다 — 매출과 상환 신청량이
+      나눗셈으로 정한다.</p>
+    <div class="readout">
+      <div class="formula mono">
+        상환 풀 <span class="hl">P</span> (WAT) <span class="op">=</span> (광고매출 <span class="op">×</span> 40%) <span class="op">÷</span> WAT 시장가<br>
+        <span class="hl">S</span> <span class="op">=</span> 상환 신청 Spark 총량<br>
+        환율 <span class="op">=</span> <span class="res">P ÷ S</span> <span class="op">&nbsp;&nbsp;←  사후 공개</span>
+      </div>
+    </div>
+    <div class="grid g4 impossible">
+      <div class="card"><h3>지급불능</h3><p class="faint">매출 이상 절대 나가지 않는다.</p></div>
+      <div class="card"><h3>뱅크런</h3><p class="faint">몰리면 환율 악화 → 스스로 분산.</p></div>
+      <div class="card"><h3>페그 붕괴</h3><p class="faint">약속 안 한 숫자는 깨질 수 없다.</p></div>
+      <div class="card"><h3>토큰 희석</h3><p class="faint">지급 대부분이 매출로 산 물량.</p></div>
+    </div>
+    <div class="callout">
+      <p><b>핵심 반직관:</b> 유저 실질 달러값 = (광고매출 × 40%) ÷ S. <b>이 식에 WAT 가격은 없다.</b>
+        가격이 10배면 지급 수량이 1/10, 달러값은 동일. 유일한 합법적 가격 엔진은 매출 바이백 —
+        단합 100명이 아니라 <b>광고주 100곳</b>이 필요하다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INFLATION -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">05 · 인플레이션 제어</p>
+    <h2>다이얼은 소각에, 환율이 아니라</h2>
+    <p class="lede">인플레는 환율을 조작해서가 아니라 발행·소각으로 잡는다. 소각률을 올리면 환율(Spark/WAT)만
+      안정화되고, 상환자 달러 풀은 불변이다.</p>
+    <div class="grid g3">
+      <div class="card"><span class="kick">Faucet</span><h3>발행 브레이크</h3><p>전향적 시즌 밸런스 + 체감 감소.
+        과거 지급 재평가 금지(=러그).</p></div>
+      <div class="card"><span class="kick">Sink · 능동 레버</span><h3>소각 다이얼</h3><p>펫·코스메틱·상점가로 유통 Spark 흡수.
+        표준 라이브 운영 — 교환비·페그를 건드리지 않는다.</p></div>
+      <div class="card"><span class="kick">Gate</span><h3>상환 게이트</h3><p>안티봇 신뢰도 통과자만 상환.
+        봇 Spark는 정직한 풀을 희석 못 한다.</p></div>
+    </div>
+    <div class="card chartcard">
+      <div class="chartwrap"><canvas id="sinkChart" class="chart" role="img"
+        aria-label="소각률이 0에서 80%로 오르면 환율은 192에서 38 Spark/WAT로 낮아지지만 유저 월 달러는 1.73달러로 고정"></canvas></div>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>환율 Spark/WAT (하락 = 안정화)</span>
+        <span><i style="background:var(--signal)"></i>유저 월 $ (불변)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIQUIDITY -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">06 · 유동성</p>
+    <h2>매출이 시장 깊이로 복리된다</h2>
+    <p class="lede">월 1회, 광고매출로 WAT/USDC DEX 유동성을 공급한다(USDC=매출, WAT=생태계 기금 → 신규발행 아님).
+      풀이 깊어질수록 상환자가 겪는 슬리피지가 붕괴한다.</p>
+    <div class="card chartcard">
+      <div class="chartwrap"><canvas id="slipChart" class="chart" role="img"
+        aria-label="상환 슬리피지가 1개월 10.8퍼센트에서 12개월 1.2퍼센트로 감소"></canvas></div>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>상환 슬리피지 (월별) · 10.8% → 1.2%</span>
+      </div>
+    </div>
+    <div class="callout warn">
+      <p><b>정직한 하방:</b> LP는 비영구손실(IL) 노출이 있다 — 가격 2배 이동 시 −5.7%, 4배 −20%.
+        상장 전 재검토 항목으로 공개한다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NUMBERS -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">07 · 숫자</p>
+    <h2>3년 모델</h2>
+    <p class="lede muted">유저 5만 · DAU 40%(2만) · 퀘스트 12회/일 · 100 Spark/회 · 평균배율 1.8× · 보상배분 40% · WAT $0.01.
+      전부 조정 가능한 내부 목표.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>연도</th><th class="num">광고매출</th><th class="num">보상풀</th><th class="num">바이백 WAT</th>
+          <th class="num">부트스트랩</th><th class="num">총 지급</th><th class="num">체감 환율</th></tr></thead>
+        <tbody>
+          <tr><td>Y1</td><td class="num">$1.05M</td><td class="num">$420K</td><td class="num">42M</td><td class="num">+40M</td><td class="num">82M</td><td class="num">~190</td></tr>
+          <tr><td>Y2</td><td class="num">$1.84M</td><td class="num">$736K</td><td class="num">74M</td><td class="num">+20M</td><td class="num">94M</td><td class="num">~170</td></tr>
+          <tr><td>Y3</td><td class="num">$2.23M</td><td class="num">$894K</td><td class="num">89M</td><td class="num flat">0</td><td class="num">89M</td><td class="num">~180</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid g3">
+      <div class="card"><span class="stat-num" style="font-size:1.7rem;font-weight:700">265M</span>
+        <p class="faint" style="margin-top:.3rem">3년 총 지급 WAT · 신규 배출은 60M(6%)뿐</p></div>
+      <div class="card"><span class="stat-num gold" style="font-size:1.7rem;font-weight:700">$0.0082</span>
+        <p class="faint" style="margin-top:.3rem">유저 월 실질가치 $1 손익분기 CPQ · 현 가정 $0.03은 3.6× 마진</p></div>
+      <div class="card"><span class="stat-num" style="font-size:1.7rem;font-weight:700">~$3.3</span>
+        <p class="faint" style="margin-top:.3rem">유저 월 체감 · 캐시워크 구간. 시장가로는 정상.</p></div>
+    </div>
+    <div class="callout">
+      <p><b>포지셔닝(정직하게):</b> 5만 명 규모에서 월 $2~4가 구조적 상한이다. "Web3로 돈 번다"는 기대를
+        심으면 100% 배신당한다. 처음부터 <b>"용돈이 아니라 게임"</b>으로 포지셔닝한다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RISK -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow" style="color:var(--warn)">08 · 리스크</p>
+    <h2>정직하게</h2>
+    <p class="lede">리스크를 숨기지 않는 것이 이 프로젝트의 설계 철학이다. 시뮬레이터는 정확히 최대 변수를
+      즉시 검증하기 위해 존재한다.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>항목</th><th>상태</th><th>임팩트</th></tr></thead>
+        <tbody>
+          <tr><td><b>CPQ $0.03</b></td><td style="color:var(--warn)">⚠ 미검증 · 최대 리스크</td>
+            <td class="muted">$0.01이면 모델 붕괴, $0.10이면 월 $10 → 사업이 됨. 전 표가 이 값에 매달림.</td></tr>
+          <tr><td>게임산업법 / GRAC</td><td class="faint">미검토</td>
+            <td class="muted">서비스 가능 여부. 랜덤 보상은 영구 환전 불가로 방화벽 설계 완료.</td></tr>
+          <tr><td>가상자산이용자보호법</td><td class="faint">미검토</td>
+            <td class="muted">상장·마케팅 전 필수.</td></tr>
+          <tr><td>DEX LP 비영구손실</td><td style="color:var(--signal)">정량화됨</td>
+            <td class="muted">가격 2× −5.7% / 4× −20%. §06 참조.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">09 · 검증</p>
+    <h2>이코노미가 코드로 증명된다</h2>
+    <p class="lede">경제 모델이 슬라이드 숫자가 아니라 실행 가능한 코드로 존재하고, 절대 규칙이 런타임
+      assertion으로 강제된다. 실사팀은 파라미터를 바꿔 즉시 재현·반증할 수 있다.</p>
+    <div class="grid g3">
+      <div class="card"><span class="kick">economy_simulator.py</span><h3>3년 모델 + 스윕</h3>
+        <p>CPQ·DAU·충전율·소각률 스윕. <code>assert Y3 배출==0</code>, <code>희석≤6%</code>, <code>매출 초과 지급 불가</code>.</p></div>
+      <div class="card"><span class="kick">redemption_epoch.py</span><h3>월간 정산 순수 함수</h3>
+        <p>지급불능 불가·가격 불변성을 코드로 보장. 격리·감사 가능.</p></div>
+      <div class="card"><span class="kick">dex_lp.py</span><h3>유동성 엔진</h3>
+        <p>정상수 곱(x·y=k) 풀. 깊이·슬리피지·IL 정량화.</p></div>
+    </div>
+    <div class="callout"><p><b>27개 유닛 테스트 전부 통과</b> — 위 모든 주장이 회귀 방지선 안에 있다.</p></div>
+  </div>
+</section>
+
+<!-- ASK -->
+<section>
+  <div class="wrap reveal">
+    <p class="eyebrow">10 · The Ask</p>
+    <h2>딜 조건</h2>
+    <p class="lede muted">아래는 딜 특정 정보라 이 브리프에서 의도적으로 비워 두었다 — 라운드 확정 시 채운다.</p>
+    <div class="grid g4">
+      <div class="card tbd"><span class="tag">라운드 규모</span><h3 style="margin-top:.6rem;color:var(--ink-faint)">[ TBD ]</h3></div>
+      <div class="card tbd"><span class="tag">밸류에이션</span><h3 style="margin-top:.6rem;color:var(--ink-faint)">FDV $10M<br><small class="faint" style="font-weight:400">잠정</small></h3></div>
+      <div class="card tbd"><span class="tag">자금 사용처</span><h3 style="margin-top:.6rem;color:var(--ink-faint)">[ TBD ]</h3></div>
+      <div class="card tbd"><span class="tag">팀 · 트랙션</span><h3 style="margin-top:.6rem;color:var(--ink-faint)">[ TBD ]</h3></div>
+    </div>
+    <div class="callout"><p><b>다음 관문:</b> CPQ 검증. 이 값 하나가 확정되면 모델 전체가 목표에서 사실로 바뀐다.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>QuestFi — Attention becomes Value.</div>
+    <div class="mono faint">내부 목표이며 약속이 아님 · 투자 권유 아님 · 숫자는 조정 가능</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* theme toggle */
+  var root = document.documentElement, tg = document.getElementById("tg");
+  function current() {
+    var set = root.getAttribute("data-theme");
+    if (set) return set;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  tg.addEventListener("click", function () {
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    drawAll();
+  });
+
+  /* reveal on scroll */
+  var reveals = document.querySelectorAll(".reveal");
+  if (reduce || !("IntersectionObserver" in window)) {
+    reveals.forEach(function (el) { el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.14 });
+    reveals.forEach(function (el) { io.observe(el); });
+  }
+
+  /* helpers to read theme tokens */
+  function tok(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+  /* canvas setup with DPR */
+  function fit(canvas, h) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = canvas.clientWidth || canvas.parentElement.clientWidth;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.height = h + "px";
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  /* ---- slippage collapse chart ---- */
+  var slip = [10.77, 6.89, 4.90, 3.73, 2.97, 2.45, 2.08, 1.80, 1.58, 1.41, 1.27, 1.15];
+  function drawSlip() {
+    var c = document.getElementById("slipChart"); if (!c) return;
+    var f = fit(c, 300), ctx = f.ctx, W = f.w, H = f.h;
+    var padL = 46, padR = 16, padT = 18, padB = 34;
+    var accent = tok("--accent"), line = tok("--line"), faint = tok("--ink-faint"), signal = tok("--signal");
+    var max = 12, min = 0;
+    function X(i) { return padL + (W - padL - padR) * (i / (slip.length - 1)); }
+    function Y(v) { return padT + (H - padT - padB) * (1 - (v - min) / (max - min)); }
+    ctx.clearRect(0, 0, W, H);
+    /* grid */
+    ctx.strokeStyle = line; ctx.fillStyle = faint; ctx.lineWidth = 1;
+    ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    [0, 3, 6, 9, 12].forEach(function (g) {
+      var y = Y(g); ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillText(g + "%", padL - 8, y);
+    });
+    /* x labels */
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    [0, 3, 6, 9, 11].forEach(function (i) { ctx.fillText("M" + (i + 1), X(i), H - padB + 8); });
+    /* area */
+    var grad = ctx.createLinearGradient(0, padT, 0, H - padB);
+    grad.addColorStop(0, accent + "44"); grad.addColorStop(1, accent + "00");
+    ctx.beginPath(); ctx.moveTo(X(0), Y(slip[0]));
+    slip.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+    ctx.lineTo(X(slip.length - 1), H - padB); ctx.lineTo(X(0), H - padB); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    /* line */
+    ctx.beginPath(); ctx.moveTo(X(0), Y(slip[0]));
+    slip.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+    ctx.strokeStyle = accent; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.stroke();
+    /* endpoint emphasis */
+    var lx = X(slip.length - 1), ly = Y(slip[slip.length - 1]);
+    ctx.fillStyle = signal; ctx.beginPath(); ctx.arc(lx, ly, 4.5, 0, 7); ctx.fill();
+    ctx.fillStyle = signal; ctx.font = "600 12px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+    ctx.fillText("1.2%", lx - 6, ly - 6);
+    var sx = X(0), sy = Y(slip[0]);
+    ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(sx, sy, 4, 0, 7); ctx.fill();
+    ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText("10.8%", sx + 6, sy - 4);
+  }
+
+  /* ---- sink invariance chart ---- */
+  var sinks = [{ l: "0%", rate: 192, usd: 1.73 }, { l: "30%", rate: 135, usd: 1.73 },
+               { l: "50%", rate: 96, usd: 1.73 }, { l: "80%", rate: 38, usd: 1.73 }];
+  function drawSink() {
+    var c = document.getElementById("sinkChart"); if (!c) return;
+    var f = fit(c, 300), ctx = f.ctx, W = f.w, H = f.h;
+    var padL = 44, padR = 44, padT = 20, padB = 42;
+    var accent = tok("--accent"), line = tok("--line"), faint = tok("--ink-faint"), signal = tok("--signal"), inkSoft = tok("--ink-soft");
+    var maxR = 210, maxU = 3.5;
+    var n = sinks.length, plotW = W - padL - padR, bw = plotW / n * 0.42;
+    function cx(i) { return padL + plotW * ((i + 0.5) / n); }
+    function Yr(v) { return padT + (H - padT - padB) * (1 - v / maxR); }
+    function Yu(v) { return padT + (H - padT - padB) * (1 - v / maxU); }
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = line; ctx.fillStyle = faint; ctx.lineWidth = 1;
+    ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    [0, 70, 140, 210].forEach(function (g) {
+      var y = Yr(g); ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillText(g, padL - 8, y);
+    });
+    /* right axis labels (usd) */
+    ctx.fillStyle = signal; ctx.textAlign = "left";
+    [0, 1.73, 3.5].forEach(function (g) { ctx.fillText("$" + g.toFixed(2).replace(".00",""), W - padR + 8, Yu(g)); });
+    /* bars: rate */
+    sinks.forEach(function (s, i) {
+      var x = cx(i), y = Yr(s.rate);
+      ctx.fillStyle = accent; ctx.globalAlpha = .9;
+      ctx.beginPath();
+      var r = 4, bx = x - bw / 2, by = y, bh = (H - padB) - y;
+      ctx.moveTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r); ctx.lineTo(bx + bw - r, by);
+      ctx.arcTo(bx + bw, by, bx + bw, by + r, r); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx, by + bh); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = accent; ctx.font = "600 12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText(s.rate, x, y - 5);
+      /* x labels */
+      ctx.fillStyle = inkSoft; ctx.font = "11px ui-monospace, monospace"; ctx.textBaseline = "top";
+      ctx.fillText("소각 " + s.l, x, H - padB + 9);
+    });
+    /* flat usd line */
+    ctx.strokeStyle = signal; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    sinks.forEach(function (s, i) { var x = cx(i), y = Yu(s.usd); if (i === 0) ctx.moveTo(padL, y); ctx.lineTo(x, y); if (i === n - 1) ctx.lineTo(W - padR, y); });
+    ctx.stroke(); ctx.setLineDash([]);
+    sinks.forEach(function (s, i) { var x = cx(i), y = Yu(s.usd); ctx.fillStyle = signal; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill(); });
+  }
+
+  function drawAll() { drawSlip(); drawSink(); }
+  window.addEventListener("resize", function () { clearTimeout(window.__rt); window.__rt = setTimeout(drawAll, 120); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+  drawAll();
+
+  /* ---- subtle hero starfield ---- */
+  var sc = document.getElementById("stars");
+  if (sc) {
+    var sx = sc.getContext("2d"), stars = [], SW, SH, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    function sizeStars() {
+      SW = sc.clientWidth; SH = sc.clientHeight;
+      sc.width = SW * dpr; sc.height = SH * dpr; sx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      stars = [];
+      var count = Math.min(90, Math.round(SW * SH / 14000));
+      for (var i = 0; i < count; i++) stars.push({ x: Math.random() * SW, y: Math.random() * SH, r: Math.random() * 1.3 + .3, a: Math.random() * .5 + .15, v: Math.random() * .12 + .02 });
+    }
+    function paint() {
+      var accent = tok("--accent");
+      sx.clearRect(0, 0, SW, SH);
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        sx.globalAlpha = s.a; sx.fillStyle = i % 7 === 0 ? accent : (current() === "dark" ? "#cfd6e6" : "#8b93a6");
+        sx.beginPath(); sx.arc(s.x, s.y, s.r, 0, 7); sx.fill();
+        if (!reduce) { s.x -= s.v; if (s.x < -2) s.x = SW + 2; }
+      }
+      sx.globalAlpha = 1;
+    }
+    sizeStars(); paint();
+    if (!reduce) { (function loop() { paint(); requestAnimationFrame(loop); })(); }
+    window.addEventListener("resize", function () { sizeStars(); paint(); });
+  }
+})();
+</script>
