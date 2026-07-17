@@ -1,15 +1,23 @@
-"""QuestFi Economy Simulator (§13 of CLAUDE.md).
+"""QuestFi Economy Simulator (§13 + §15 of CLAUDE.md).
 
 CPQ is the one unverified variable the entire economy model depends on.
 This module simulates the 3-year Redemption Epoch economy for a given set
 of inputs, sweeps CPQ / DAU ratio / fill-rate scenarios, and reports the
 break-even CPQ where a user's monthly real value crosses $1.
 
+It also models Spark circulation (§15): the faucet issues Spark, an
+in-game SINK burns a fraction (shop purchases), and only the remainder is
+REDEEMED for WAT. The whole point of §15 is that inflation is controlled
+by the sink, NOT by touching the swap rate — so raising sink_rate
+stabilises the headline rate (spark_per_wat) while leaving the redeemers'
+total dollar pool untouched (WAT price never enters user value, §10).
+
 Usage:
     python economy_simulator.py                      # base-case 3-year table
     python economy_simulator.py --config my.yaml      # override inputs
     python economy_simulator.py --sweep --csv out.csv # full sweep -> CSV
     python economy_simulator.py --sweep --plot out.png
+    python economy_simulator.py --sink                # sink 30/50/80% comparison
 """
 from __future__ import annotations
 
@@ -34,6 +42,11 @@ FILL_RATE_SCENARIOS = {
 CPQ_SWEEP = (0.01, 0.02, 0.03, 0.05, 0.10)
 DAU_RATIO_SWEEP = (0.2, 0.4, 0.6)
 
+# §15 sink dial: fraction of issued Spark burned in-game (shop) before it can
+# reach the redemption pool. sink_rate=0.0 => all Spark redeemed => reproduces
+# the §8 headline rate table exactly.
+SINK_SCENARIOS = {"low": 0.3, "mid": 0.5, "high": 0.8}
+
 
 @dataclass
 class Inputs:
@@ -45,6 +58,7 @@ class Inputs:
     cpq: float = 0.03
     fill_rate: dict = field(default_factory=lambda: dict(FILL_RATE_SCENARIOS["base"]))
     reward_share: float = 0.40
+    sink_rate: float = 0.0  # §15: fraction of issued Spark burned in-game before redemption
     wat_price: float = 0.01
     wat_supply: float = 1_000_000_000
     bootstrap: dict = field(default_factory=lambda: {"Y1": 40_000_000, "Y2": 20_000_000, "Y3": 0})
@@ -63,11 +77,15 @@ class Inputs:
 
 def simulate(inputs: Inputs) -> pd.DataFrame:
     """Run the 3-year economy model. Raises AssertionError if it violates
-    the non-negotiable rules in CLAUDE.md §2 / §13."""
+    the non-negotiable rules in CLAUDE.md §2 / §13 / §15."""
+    assert 0.0 <= inputs.sink_rate < 1.0, "sink_rate는 [0, 1) 범위여야 한다"
     dau = inputs.dau
-    spark_per_year = (
+    spark_issued_per_year = (
         dau * inputs.quests_per_day * inputs.spark_per_quest * inputs.avg_multiplier * 365
     )
+    # §15: sink burns a fraction in-game; only the remainder reaches redemption.
+    spark_redeemed_per_year = spark_issued_per_year * (1.0 - inputs.sink_rate)
+    spark_sunk_per_year = spark_issued_per_year - spark_redeemed_per_year
 
     rows = []
     cumulative_emission = 0.0
@@ -84,10 +102,17 @@ def simulate(inputs: Inputs) -> pd.DataFrame:
             f"{year}: 매출 초과 지급 불가 (total_wat_paid > buyback + bootstrap)"
         )
 
-        implied_rate = spark_per_year / total_wat_paid if total_wat_paid else float("inf")
+        # §15: headline rate uses REDEEMED Spark (sink已 burned), not issued.
+        # More sink -> fewer Spark chase the same WAT pool -> lower spark_per_wat.
+        implied_rate = spark_redeemed_per_year / total_wat_paid if total_wat_paid else float("inf")
 
         # §10: 유저 실질 가치에는 WAT 가격이 없다 — reward_pool_usd / dau 만으로 결정된다.
+        # sink_rate와도 무관: 전원이 균등 소각하면 상환 지분이 보존돼 유저 달러는 불변.
         user_monthly_usd = (reward_pool_usd / 365 / dau) * 30 if dau else 0.0
+        # §10 재확인: 상환 Spark 1개의 달러값 = 풀$ ÷ 상환 총량.
+        redeemer_usd_per_spark = (
+            reward_pool_usd / spark_redeemed_per_year if spark_redeemed_per_year else 0.0
+        )
 
         cumulative_emission += bootstrap
         emission_pct_of_supply = cumulative_emission / inputs.wat_supply
@@ -100,9 +125,12 @@ def simulate(inputs: Inputs) -> pd.DataFrame:
                 "buyback_wat": buyback_wat,
                 "bootstrap_wat": bootstrap,
                 "total_wat_paid": total_wat_paid,
-                "spark_issued": spark_per_year,
+                "spark_issued": spark_issued_per_year,
+                "spark_sunk": spark_sunk_per_year,
+                "spark_redeemed": spark_redeemed_per_year,
                 "implied_rate": implied_rate,
                 "user_monthly_usd": user_monthly_usd,
+                "redeemer_usd_per_spark": redeemer_usd_per_spark,
                 "cumulative_emission": cumulative_emission,
                 "emission_pct_of_supply": emission_pct_of_supply,
             }
@@ -115,6 +143,33 @@ def simulate(inputs: Inputs) -> pd.DataFrame:
     assert df["cumulative_emission"].iloc[-1] <= inputs.wat_supply * 0.06 + 1e-6, "희석 상한 6% 초과"
 
     return df
+
+
+def sink_comparison(base_inputs: Inputs) -> pd.DataFrame:
+    """§15: compare sink dial scenarios (30/50/80%) against sink=0 baseline.
+
+    Demonstrates the core §15 claim: raising the sink stabilises the headline
+    rate (spark_per_wat drops as fewer Spark reach redemption) while the
+    redeemers' dollar pool per user (user_monthly_usd) stays constant — the
+    dial belongs on the sink, never on the swap rate.
+    """
+    scenarios = {"none": 0.0, **SINK_SCENARIOS}
+    rows = []
+    for name, sink_rate in scenarios.items():
+        df = simulate(replace(base_inputs, sink_rate=sink_rate))
+        for year, row in df.iterrows():
+            rows.append(
+                {
+                    "sink_scenario": name,
+                    "sink_rate": sink_rate,
+                    "year": year,
+                    "spark_redeemed": row["spark_redeemed"],
+                    "implied_rate": row["implied_rate"],
+                    "user_monthly_usd": row["user_monthly_usd"],
+                    "redeemer_usd_per_spark": row["redeemer_usd_per_spark"],
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def sweep(base_inputs: Inputs) -> pd.DataFrame:
@@ -175,13 +230,25 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="QuestFi Economy Simulator")
     parser.add_argument("--config", type=str, help="YAML 설정 파일 경로 (미지정 시 §8 기본값 사용)")
     parser.add_argument("--sweep", action="store_true", help="cpq/dau_ratio/fill_rate 전체 스윕 실행")
+    parser.add_argument("--sink", action="store_true", help="§15 소각률 30/50/80% 비교 (환율 안정화 검증)")
     parser.add_argument("--plot", type=str, help="스윕 결과를 그래프로 저장할 경로 (예: sweep.png)")
     parser.add_argument("--csv", type=str, help="결과를 CSV로 저장할 경로")
     args = parser.parse_args(argv)
 
     inputs = Inputs.from_yaml(args.config) if args.config else Inputs()
 
-    if args.sweep:
+    if args.sink:
+        df = sink_comparison(inputs)
+        with pd.option_context("display.float_format", lambda x: f"{x:,.4f}", "display.max_rows", None):
+            print(df.to_string(index=False))
+        print(
+            "\n§15 판정: sink_rate가 오를수록 implied_rate(Spark/WAT)는 낮아져 안정화되지만,\n"
+            "         user_monthly_usd(상환자 달러 풀)는 불변 → 완충은 소각에, 환율에 손대지 않는다."
+        )
+        if args.csv:
+            df.to_csv(args.csv, index=False)
+            print(f"\n저장됨: {args.csv}")
+    elif args.sweep:
         df = sweep(inputs)
         with pd.option_context("display.float_format", lambda x: f"{x:,.4f}", "display.max_rows", None):
             print(df.to_string(index=False))
