@@ -467,16 +467,22 @@
     <h2>정직하게</h2>
     <p class="lede">리스크를 숨기지 않는 것이 이 프로젝트의 설계 철학이다. 시뮬레이터는 정확히 최대 변수를
       즉시 검증하기 위해 존재한다.</p>
+    <div class="callout" style="border-left-color:var(--signal);background:color-mix(in oklab, var(--signal) 9%, var(--panel));border-color:color-mix(in oklab, var(--signal) 30%, var(--line))">
+      <p><b style="color:var(--signal)">유저 원금 리스크 없음 (no principal at risk).</b>
+        예치·스테이킹·선구매가 없다 — 유저가 넣는 돈이 0. 보상은 뒷사람 자본이 아니라 <b>광고 매출의 분배</b>다
+        (폰지·피라미드 아님). Axie식 선구매 모델과 근본적으로 다르다. 잔여 리스크는 유저가 아니라
+        아래 <b>프로젝트 측</b>에 있다.</p>
+    </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>항목</th><th>상태</th><th>임팩트</th></tr></thead>
+        <thead><tr><th>프로젝트 측 항목</th><th>상태</th><th>임팩트</th></tr></thead>
         <tbody>
           <tr><td><b>CPQ $0.03</b></td><td style="color:var(--warn)">⚠ 미검증 · 최대 리스크</td>
             <td class="muted">$0.01이면 모델 붕괴, $0.10이면 월 $10 → 사업이 됨. 전 표가 이 값에 매달림.</td></tr>
-          <tr><td>게임산업법 / GRAC</td><td class="faint">미검토</td>
-            <td class="muted">서비스 가능 여부. 랜덤 보상은 영구 환전 불가로 방화벽 설계 완료.</td></tr>
-          <tr><td>가상자산이용자보호법</td><td class="faint">미검토</td>
-            <td class="muted">상장·마케팅 전 필수.</td></tr>
+          <tr><td>토큰 보상 게임 규제<br><small class="faint">타깃 관할</small></td><td class="faint">재스코프 필요</td>
+            <td class="muted">한국 서비스 안 함(확정). random+환전은 대부분 관할서 사행성 이슈 → §5 방화벽으로 선제 설계.</td></tr>
+          <tr><td>가상자산 / 증권 규제<br><small class="faint">타깃 관할</small></td><td class="faint">재스코프 필요</td>
+            <td class="muted">WAT 상장·마케팅 전, 타깃 관할 기준 필수.</td></tr>
           <tr><td>DEX LP 비영구손실</td><td style="color:var(--signal)">정량화됨</td>
             <td class="muted">가격 2× −5.7% / 4× −20%. §06 참조.</td></tr>
         </tbody>
