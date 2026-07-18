@@ -67,10 +67,19 @@
 
 ## ✅ 이미 완료 (참고)
 
-- 경제 시뮬레이터 (`economy_simulator.py`) — 3년 모델 + CPQ/DAU/충전율/소각률 스윕 + 절대규칙 assertion
-- Redemption Epoch 순수함수 (`redemption_epoch.py`) + DEX LP 모델 (`dex_lp.py`) + CPQ 삼각검증 (`cpq_model.py`)
-- 유닛 테스트 39개 통과
-- 인플레/디플레 제어 설계 (§15 — 소각 다이얼)
-- 투자자 자료: `investor-brief.md` + `investor-deck.html`(아티팩트)
+**모델·코드 (유닛 테스트 103개 통과)**
+- `economy_simulator.py` — 3년 모델 + CPQ/DAU/충전율/소각률 스윕 + 절대규칙 assertion
+- `redemption_epoch.py` — 월간 정산 순수함수 (P÷S, 가격불변성·지급불능불가 보장)
+- `dex_lp.py` — DEX LP 깊이·슬리피지·IL 모델
+- `cpq_model.py` — CPQ 삼각검증 (rewarded/CPC/CPA → 손익분기·목표)
+- `trust_score.py` — 안티봇 신뢰도 게이트
+- `ad_mediation.py` — 멀티소스 미디에이션 (fill·eCPM 리프트)
+- `tier1_metrics.py` — Tier 1 측정 하네스 (honest CPQ 판정)
+- `ad_revenue_scenarios.py` — 광고 매출 시나리오 (빈도 감쇠·오퍼월)
+- `sink_shop.py` — 소각처/상점 (인플레 완충 다이얼)
+
+**문서·자료**
+- 투자자: `investor-brief.md` + `investor-deck.html`(아티팩트) + `engine-diagram.pdf`
+- 설계: 인플레제어(§15) · CPQ검증(`cpq-validation.md`) · Tier1스펙 · 미디에이션 · 수익화소스카탈로그 · 소각처 · 관할프레임 · 안티봇
+- Tier 1 플레이 가능 프로토타입(`tier1-prototype.html`, 아티팩트)
 - 리스크 프레이밍: 원금 리스크 없음 · 한국 제외 재스코프 · **보장 아님(수익 변동)** 명시
-- CPQ 검증 실험 설계 (`cpq-validation.md`)
