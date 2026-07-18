@@ -21,13 +21,25 @@ class TestOnboarding(unittest.TestCase):
         self.assertFalse(s.needs_wallet)
         self.assertFalse(s.kyc_required)
 
-    def test_first_small_redemption_embedded_sponsored_no_kyc(self):
+    def test_first_small_redemption_user_pays_gas_no_kyc(self):
         s = onboarding_decision(has_account=True, is_redeeming=True, redemption_value_usd=3.0)
         self.assertIs(s.stage, Stage.REDEEMING)
         self.assertTrue(s.needs_wallet)
         self.assertEqual(s.wallet_mode, "embedded")
-        self.assertTrue(s.gas_sponsored)
+        self.assertEqual(s.gas_payer, "user")   # operator sponsors no gas
         self.assertFalse(s.kyc_required)
+
+    def test_external_wallet_mode(self):
+        s = onboarding_decision(has_account=True, is_redeeming=True,
+                                redemption_value_usd=3.0, embedded_wallet=False)
+        self.assertEqual(s.wallet_mode, "connected")
+        self.assertEqual(s.gas_payer, "user")
+
+    def test_operator_never_sponsors_gas(self):
+        for kw in (dict(has_account=True, is_redeeming=True, redemption_value_usd=3.0),
+                   dict(has_account=True, is_redeeming=False, wants_export=True),
+                   dict(has_account=True, is_redeeming=False)):
+            self.assertNotEqual(onboarding_decision(**kw).gas_payer, "operator")
 
     def test_large_redemption_triggers_kyc(self):
         s = onboarding_decision(has_account=True, is_redeeming=True,
@@ -42,11 +54,11 @@ class TestOnboarding(unittest.TestCase):
         self.assertFalse(below.kyc_required)
         self.assertTrue(at.kyc_required)  # >= threshold
 
-    def test_export_self_custody_unsponsored(self):
+    def test_export_self_custody_user_gas(self):
         s = onboarding_decision(has_account=True, is_redeeming=False, wants_export=True)
         self.assertIs(s.stage, Stage.SELF_CUSTODY)
         self.assertEqual(s.wallet_mode, "self_custody")
-        self.assertFalse(s.gas_sponsored)
+        self.assertEqual(s.gas_payer, "user")
 
     def test_negative_value_raises(self):
         with self.assertRaises(ValueError):

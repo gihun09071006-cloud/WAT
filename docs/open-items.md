@@ -44,7 +44,8 @@
 | C2 | 코어 루프 60초 UX 프로토타입 | 🟢 시연 | P1 | Tier 1 데모가 60초 루프·부품스캔·Spark 흐름 시연(§13 #3) |
 | C3 | 게임 본편 (10스테이지·행성 이동·비행기/조종사/펫) | 🔴 | P2 | "나중에 똑디" |
 | C4 | **소각처(상점) 설계** | 🟢 모델완료 | P1 | `sink_shop.py` + `sink-shop.md`. 카탈로그·수요·가격 다이얼 → sink_rate. §15 정밀화: 가격 인상은 sweet spot까지만 흡수, 1차 레버는 신규 아이템 |
-| C5 | **Web3 지갑 추상화** | 🟢 설계완료 | P1 | `onboarding.py` + `wallet-abstraction.md`. 지갑을 첫 상환까지 지연·자동생성, 가스 스폰서, 비수탁, KYC는 고액만. 벤더: Sequence/Privy. 실 SDK 연동 남음 |
+| C5 | **Web3 지갑 추상화** | 🟢 설계완료 | P1 | `onboarding.py` + `wallet-abstraction.md`. 2계층(게임러 지갑0/보상러만 지갑). **가스 운영사 미부담 → 유저 WAT 차감 → L2 필수.** 비수탁, KYC 고액만. 벤더 Sequence/Privy. 실 SDK 연동 남음 |
+| D5 | 체인 선택 (L2/앱체인) | 🔴 | P1 | 가스 정책이 저렴한 체인 강제(§C5). Base·Arbitrum·Polygon 등 비교 필요 |
 
 ## D. 온체인 · 기술
 
