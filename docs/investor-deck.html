@@ -252,7 +252,7 @@
   <div class="brand"><span class="dot"></span> QuestFi</div>
   <div class="ticker mono" aria-hidden="true">
     Y3 배출 <span>0</span> · 신규 발행 <span>6%</span> of supply · 손익분기 CPQ <b>$0.0082</b> ·
-    현 가정 CPQ $0.03 = <b>3.6× 마진</b> · 유동성 슬리피지 12개월 10.8% → <b>1.2%</b> · 이코노미 테스트 <b>27 PASS</b>
+    현 가정 CPQ $0.03 = <b>3.6× 마진</b> · 유동성 슬리피지 12개월 10.8% → <b>1.2%</b> · 오퍼월 ARPDAU <b>3~8×</b> · 이코노미 테스트 <b>114 PASS</b> · 플레이 가능 프로토타입
   </div>
   <button class="toggle" id="tg" type="button" aria-label="테마 전환">Theme</button>
 </div>
@@ -270,7 +270,7 @@
       <div class="chip"><span class="stat-num ok">Y3 = 0</span><small>신규 배출 · 매출 자립</small></div>
       <div class="chip"><span class="stat-num">6%</span><small>3년 누적 희석 상한</small></div>
       <div class="chip"><span class="stat-num gold">$0.0082</span><small>손익분기 CPQ</small></div>
-      <div class="chip"><span class="stat-num ok">27 / 27</span><small>이코노미 테스트 통과</small></div>
+      <div class="chip"><span class="stat-num ok">114 / 114</span><small>이코노미 테스트 통과</small></div>
     </div>
   </div>
 </section>
@@ -328,6 +328,11 @@
       </div>
       <p class="note">// 광고주는 카드·인보이스로 결제. 토큰을 만지지 않는다 — 온보딩의 강점.</p>
     </div>
+    <div class="callout">
+      <p><b>수요는 한 곳이 아니라 전부에서 (미디에이션):</b> CPQ는 소스 무관 추상화다 — rewarded 시청·offerwall 액션·
+        playable·직판을 집약해 경쟁 입찰. 단일 네트워크 종속 0. <b>오퍼월(액션 완료)은 rewarded 대비 ARPDAU 3~8배</b>이고,
+        소스를 쌓으면 fill·eCPM이 손익분기 위로 올라간다(단일 소스 $0.0052 → 다중 $0.0086↑).</p>
+    </div>
   </div>
 </section>
 
@@ -340,7 +345,7 @@
       유저 화면에 "광고"라는 단어는 없다.</p>
     <div class="flow loop">
       <div class="node"><b>시작 10초</b><small>업그레이드 개방</small></div><span class="arrow">→</span>
-      <div class="node"><b>부품 스캔</b><small>10회 → 업그레이드</small></div><span class="arrow">→</span>
+      <div class="node"><b>부품 스캔</b><small>6~8회 → 업그레이드</small></div><span class="arrow">→</span>
       <div class="node"><b>보스 클리어</b><small>Spark 보상</small></div><span class="arrow">→</span>
       <div class="node"><b>10 스테이지</b><small>월드 완주</small></div><span class="arrow">→</span>
       <div class="node"><b>다음 행성</b><small>무한 tail</small></div>
@@ -348,6 +353,10 @@
     <div class="callout">
       <p><b>생존 조건 — 모든 기능의 리트머스:</b> "WAT 가격이 0이어도 내일 또 접속할 게임인가?"
         재미가 먼저인 것은 UX 취향이 아니라 경제 생존 조건이다.</p>
+    </div>
+    <div class="callout" style="border-left-color:var(--signal);background:color-mix(in oklab, var(--signal) 9%, var(--panel));border-color:color-mix(in oklab, var(--signal) 30%, var(--line))">
+      <p><b style="color:var(--signal)">플레이 가능한 프로토타입.</b> 60초 코어 루프(부품 스캔 → 업그레이드 → 보스 → Spark)가
+        실제로 돌아간다 — <a href="https://claude.ai/code/artifact/fa4cea5c-8d65-4ba1-ab33-5e6b0e709737" target="_blank" rel="noopener">데모 플레이 ↗</a></p>
     </div>
   </div>
 </section>
@@ -402,6 +411,11 @@
         <span><i style="background:var(--accent)"></i>환율 Spark/WAT (하락 = 안정화)</span>
         <span><i style="background:var(--signal)"></i>유저 월 $ (불변)</span>
       </div>
+    </div>
+    <div class="callout">
+      <p><b>소각처의 실체:</b> 비행기·조종사·펫·코스메틱 (Rare→Genesis). 매력적 소각처를 늘리면 소각이 단조 증가
+        (모델상 17% → 72%). <b>단, 가격 인상은 sweet spot까지만 흡수</b> — 그 위에선 수요가 죽어 오히려 줄어든다.
+        1차 완충 레버는 가격이 아니라 <b>신규 아이템</b>이다.</p>
     </div>
   </div>
 </section>
@@ -460,6 +474,11 @@
         약속이 불가능하다.</p>
     </div>
     <div class="callout">
+      <p><b>단위 경제 (실측 대기):</b> 10,000명 기준 보상풀은 티어·오퍼월 비중에 따라 <b>월 $15K~59K</b>. 부품 스캔은
+        <b>6~8회/퀘스트</b>가 최적 — 목표 CPQ를 넘기면서 완료율 65~75% 유지(그 이상은 완료율만 깎이고 매출은 평평).
+        매출의 진짜 레버는 시청 횟수가 아니라 <b>eCPM 티어·오퍼월 비중</b>이다.</p>
+    </div>
+    <div class="callout">
       <p><b>포지셔닝(정직하게):</b> 5만 명 규모에서 월 $2~4가 구조적 상한이다. "Web3로 돈 번다"는 기대를
         심으면 100% 배신당한다. 처음부터 <b>"용돈이 아니라 게임"</b>으로 포지셔닝한다.</p>
     </div>
@@ -512,7 +531,9 @@
       <div class="card"><span class="kick">dex_lp.py</span><h3>유동성 엔진</h3>
         <p>정상수 곱(x·y=k) 풀. 깊이·슬리피지·IL 정량화.</p></div>
     </div>
-    <div class="callout"><p><b>27개 유닛 테스트 전부 통과</b> — 위 모든 주장이 회귀 방지선 안에 있다.</p></div>
+    <div class="callout"><p><b>114개 유닛 테스트 전부 통과.</b> 10개 모델 — economy · redemption · dex · <b>cpq</b> ·
+      <b>trust(안티봇)</b> · <b>mediation</b> · tier1 · revenue · <b>sink</b> · units — 이 전부 회귀 방지선 안에 있다.
+      여기에 플레이 가능한 <a href="https://claude.ai/code/artifact/fa4cea5c-8d65-4ba1-ab33-5e6b0e709737" target="_blank" rel="noopener">프로토타입 ↗</a> + 엔진 다이어그램.</p></div>
   </div>
 </section>
 
