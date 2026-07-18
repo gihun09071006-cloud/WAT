@@ -29,14 +29,17 @@ class ShopItem:
     name: str
     category: str          # plane / pilot / pet / cosmetic
     rarity: str            # §12 ladder
-    price: float           # in Spark
+    price: float           # in the item's currency
     appeal: float          # base demand breadth in [0,1]
+    currency: str = "spark"  # "spark"(프리미엄 등급) | "coin"(일반 등급, 게임머니)
 
     def __post_init__(self) -> None:
         if self.rarity not in RARITY_PULL:
             raise ValueError(f"알 수 없는 등급: {self.rarity}")
         if not 0.0 <= self.appeal <= 1.0 or self.price <= 0:
             raise ValueError("appeal은 [0,1], price는 양수")
+        if self.currency not in ("spark", "coin"):
+            raise ValueError("currency는 'spark' 또는 'coin'")
 
 
 def expected_spend_per_user(item: ShopItem, budget: float, k: float = 0.5) -> float:
@@ -54,12 +57,15 @@ def expected_spend_per_user(item: ShopItem, budget: float, k: float = 0.5) -> fl
 
 
 def sink_rate(catalog: list[ShopItem], budget: float, k: float = 0.5,
-              max_frac: float = 0.9) -> float:
+              max_frac: float = 0.9, currency: str = "spark") -> float:
     """Effective fraction of issued Spark burned in the shop, in [0, max_frac].
 
+    Only PREMIUM (Spark-priced) items count toward the Spark sink — normal
+    (coin/game-money) items sit outside the value economy (§3 3-currency split).
     `budget` = Spark a user earns per period. Capped because users won't spend
     everything (some redeems or holds)."""
-    total = sum(expected_spend_per_user(i, budget, k) for i in catalog)
+    total = sum(expected_spend_per_user(i, budget, k)
+                for i in catalog if i.currency == currency)
     return min(max_frac, total / budget) if budget > 0 else 0.0
 
 
@@ -72,10 +78,12 @@ def apply_price_dial(catalog: list[ShopItem], multiplier: float) -> list[ShopIte
     return [replace(i, price=i.price * multiplier) for i in catalog]
 
 
-# a starter catalog reflecting the game (§ decision log: 비행기/조종사/펫/코스메틱)
+# a starter catalog. §3: 일반 등급 = 게임머니(coin), 프리미엄 등급 = Spark.
+# Only spark items are the Spark sink; coin items are pure game-money balance.
 DEFAULT_CATALOG = [
-    ShopItem("스타터 도색", "cosmetic", "Rare", 300, 0.55),
-    ShopItem("정예 조종사", "pilot", "Epic", 900, 0.45),
+    ShopItem("기본 도색", "cosmetic", "Rare", 300, 0.55, currency="coin"),     # 일반=게임머니
+    ShopItem("일반 조종사", "pilot", "Rare", 500, 0.45, currency="coin"),      # 일반=게임머니
+    ShopItem("정예 조종사", "pilot", "Epic", 900, 0.45),                        # 프리미엄=Spark
     ShopItem("부스터 트레일", "cosmetic", "Epic", 700, 0.40),
     ShopItem("레전더리 펫", "pet", "Legendary", 1800, 0.55),
     ShopItem("미식 기체 스킨", "plane", "Mythic", 3200, 0.45),
@@ -86,14 +94,15 @@ DEFAULT_CATALOG = [
 if __name__ == "__main__":
     budget = 2000.0  # ~ daily Spark per active user (100 x 12 quests x 1.8 mult ≈ 2160)
 
-    print(f"기준 유저 예산 = {budget:,.0f} Spark/기간\n")
-    print("■ 카탈로그 풍부함 → 소각률")
-    sparse = DEFAULT_CATALOG[:2]
-    print(f"   빈약한 상점(2종)     sink_rate = {sink_rate(sparse, budget):.0%}")
-    print(f"   기본 상점(6종)       sink_rate = {sink_rate(DEFAULT_CATALOG, budget):.0%}")
+    print(f"기준 유저 예산 = {budget:,.0f} Spark/기간  (프리미엄=Spark 아이템만 소각에 계산)\n")
+    print("■ 프리미엄(Spark) 카탈로그 풍부함 → 소각률")
+    spark_items = [i for i in DEFAULT_CATALOG if i.currency == "spark"]
+    sparse = spark_items[:2]
+    print(f"   빈약(프리미엄 2종)   sink_rate = {sink_rate(sparse, budget):.0%}")
+    print(f"   기본(프리미엄 5종)   sink_rate = {sink_rate(DEFAULT_CATALOG, budget):.0%}")
     rich = DEFAULT_CATALOG + [ShopItem("길드 문장", "cosmetic", "Legendary", 1200, 0.5),
                               ShopItem("시즌 패스 스킨", "plane", "Mythic", 2500, 0.5)]
-    print(f"   풍부한 상점(8종)     sink_rate = {sink_rate(rich, budget):.0%}")
+    print(f"   풍부(프리미엄 7종)   sink_rate = {sink_rate(rich, budget):.0%}")
 
     print("\n■ 가격 다이얼(§15 능동 레버) → 소각률  ※ WAT 환율은 안 건드림")
     for m in (0.5, 0.75, 1.0, 1.5, 2.0, 3.0):
@@ -104,7 +113,7 @@ if __name__ == "__main__":
     try:
         from economy_simulator import Inputs, simulate
         from dataclasses import replace
-        for label, cat in (("빈약", sparse), ("기본", DEFAULT_CATALOG), ("풍부", rich)):
+        for label, cat in (("빈약", list(sparse)), ("기본", DEFAULT_CATALOG), ("풍부", rich)):
             sr = sink_rate(cat, budget)
             df = simulate(replace(Inputs(), sink_rate=sr))
             print(f"   {label} 상점(sink {sr:.0%}) → Y1 환율 {df['implied_rate']['Y1']:.0f} Spark/WAT "

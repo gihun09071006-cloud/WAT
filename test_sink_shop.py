@@ -50,9 +50,15 @@ class TestSpendCurve(unittest.TestCase):
 class TestSinkRate(unittest.TestCase):
     def test_richer_catalog_burns_more(self):
         budget = 2000
-        sparse = ss.DEFAULT_CATALOG[:2]
-        full = ss.DEFAULT_CATALOG
-        self.assertGreater(ss.sink_rate(full, budget), ss.sink_rate(sparse, budget))
+        spark_items = [i for i in ss.DEFAULT_CATALOG if i.currency == "spark"]
+        sparse = spark_items[:2]
+        self.assertGreater(ss.sink_rate(ss.DEFAULT_CATALOG, budget), ss.sink_rate(sparse, budget))
+
+    def test_coin_items_excluded_from_spark_sink(self):
+        # §3: 게임머니(coin) items sit outside the Spark value economy
+        budget = 2000
+        coin_only = [i for i in ss.DEFAULT_CATALOG if i.currency == "coin"]
+        self.assertEqual(ss.sink_rate(coin_only, budget), 0.0)
 
     def test_bounded(self):
         budget = 2000
